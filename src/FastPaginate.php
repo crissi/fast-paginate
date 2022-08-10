@@ -13,25 +13,23 @@ class FastPaginate
 {
     public function fastPaginate()
     {
-        return $this->paginate('paginate', function (array $items, $paginator) {
+        return $this->paginate('paginate', function (array $items, $perPage, $page) {
             return $this->paginator(
                 $items,
-                $paginator->total(),
-                $paginator->perPage(),
-                $paginator->currentPage(),
-                $paginator->getOptions()
+                $this->toBase()->getCountForPagination(),
+                $perPage,
+                $page
             );
         });
     }
 
     public function simpleFastPaginate()
     {
-        return $this->paginate('simplePaginate', function (array $items, $paginator) {
+        return $this->paginate('simplePaginate', function (array $items, $perPage, $page) {
             return $this->simplePaginator(
                 $items,
                 $paginator->perPage(),
-                $paginator->currentPage(),
-                $paginator->getOptions()
+                $paginator->currentPage()
             );
         });
     }
@@ -57,33 +55,23 @@ class FastPaginate
 
             $innerSelectColumns = FastPaginate::getInnerSelectColumns($this);
 
-            // This is the copy of the query that becomes
-            // the inner query that selects keys only.
-            $paginator = $this->clone()
+            $innerQuery = $this->clone()
                 // Only select the primary key, we'll get the full
                 // records in a second query below.
                 ->select($innerSelectColumns)
+                ->forPage($page, $perPage)
                 // We don't need eager loads for this cloned query, they'll
                 // remain on the query that actually gets the records.
                 // (withoutEagerLoads not available on Laravel 8.)
                 ->setEagerLoads([])
-                ->{$paginationMethod}($perPage, ['*'], $pageName, $page);
+                ->getQuery();
 
-            // Get the key values from the records on the current page without mutating them.
-            $ids = $paginator->getCollection()->map->getRawOriginal($key)->toArray();
+            $this->query->whereIn("$table.$key", $innerQuery);
 
-            if ($model->getKeyType() === 'int') {
-                $this->query->whereIntegerInRaw("$table.$key", $ids);
-            } else {
-                $this->query->whereIn("$table.$key", $ids);
-            }
 
-            // The $paginator is full of records that are primary keys only. Here,
-            // we create a new paginator with all of the *stats* from the index-
-            // only paginator, but the *items* from the outer query.
             $items = $this->simplePaginate($perPage, $columns, $pageName, 1)->items();
 
-            return Closure::fromCallable($paginatorOutput)->call($this, $items, $paginator);
+            return Closure::fromCallable($paginatorOutput)->call($this, $items, $perPage, $page);
         };
     }
 
