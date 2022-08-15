@@ -60,7 +60,7 @@ class FastPaginate
             $perPage = $perPage ?: $this->model->getPerPage();
 
             $innerSelectColumns = FastPaginate::getInnerSelectColumns($this);
-            
+
             $innerQuery = $this->clone()
                 // Only select the primary key, we'll get the full
                 // records in a second query below.
@@ -73,7 +73,6 @@ class FastPaginate
                 ->getQuery();
 
             $this->query->joinSub($innerQuery, 'fast_paginate_inner_query', "{$table}.{$key}", "fast_paginate_inner_query.{$key}");
-
 
             $items = $this->simplePaginate($perPage, $columns, $pageName, 1)->items();
 
