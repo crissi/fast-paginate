@@ -62,8 +62,7 @@ class FastPaginate
             $innerSelectColumns = FastPaginate::getInnerSelectColumns($this);
             
             $innerQuery = $this->clone()
-                // Only select the primary key, we'll get the full
-                // records in a second query below.
+                // Only select the primary keys
                 ->select($innerSelectColumns)
                 ->forPage($page, $perPage)
                 // We don't need eager loads for this cloned query, they'll
