@@ -18,7 +18,8 @@ class FastPaginate
                 $items,
                 $this->toBase()->getCountForPagination(),
                 $perPage,
-                $page
+                $page,
+                []
             );
         });
     }
@@ -28,8 +29,9 @@ class FastPaginate
         return $this->paginate('simplePaginate', function (array $items, $perPage, $page) {
             return $this->simplePaginator(
                 $items,
-                $paginator->perPage(),
-                $paginator->currentPage()
+                $perPage,
+                $page,
+                []
             );
         });
     }
@@ -53,20 +55,25 @@ class FastPaginate
             $key = $model->getKeyName();
             $table = $model->getTable();
 
-            $innerSelectColumns = FastPaginate::getInnerSelectColumns($this);
+            $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
+            $perPage = $perPage ?: $this->model->getPerPage();
+
+            $innerSelectColumns = FastPaginate::getInnerSelectColumns($this);
+            
             $innerQuery = $this->clone()
                 // Only select the primary key, we'll get the full
                 // records in a second query below.
+                ->setEagerLoads([])
                 ->select($innerSelectColumns)
                 ->forPage($page, $perPage)
                 // We don't need eager loads for this cloned query, they'll
                 // remain on the query that actually gets the records.
                 // (withoutEagerLoads not available on Laravel 8.)
-                ->setEagerLoads([])
+               // ->limit(5)
                 ->getQuery();
 
-            $this->query->whereIn("$table.$key", $innerQuery);
+            $this->query->joinSub($innerQuery, 'fast_paginate_inner_query', "{$table}.{$key}", "fast_paginate_inner_query.{$key}");
 
 
             $items = $this->simplePaginate($perPage, $columns, $pageName, 1)->items();

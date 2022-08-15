@@ -26,7 +26,7 @@ class BuilderTest extends BaseTest
         $this->assertInstanceOf(LengthAwarePaginator::class, $results);
         $this->assertEquals(15, $results->count());
         $this->assertEquals('Person 15', $results->last()->name);
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
 
         $this->assertEquals(
             'select * from `users` where `users`.`id` in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15) limit 16 offset 0',
@@ -124,7 +124,7 @@ class BuilderTest extends BaseTest
         });
 
         // If we didn't clear the eager loads, there would be 5 queries.
-        $this->assertCount(4, $queries);
+        $this->assertCount(3, $queries);
 
         // The eager load should come last, after the outer query has run.
         $this->assertEquals(
@@ -188,7 +188,7 @@ class BuilderTest extends BaseTest
             User::query()->withCount('posts')->orderByDesc('posts_count')->fastPaginate();
         });
 
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
         $this->assertEquals(
             'select `users`.`id`, (select count(*) from `posts` where `users`.`id` = `posts`.`user_id`) as `posts_count` from `users` order by `posts_count` desc limit 15 offset 0',
             $queries[1]['query']
@@ -202,7 +202,7 @@ class BuilderTest extends BaseTest
             User::query()->withCount('posts as posts_ct')->orderByDesc('posts_ct')->fastPaginate();
         });
 
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
         $this->assertEquals(
             'select `users`.`id`, (select count(*) from `posts` where `users`.`id` = `posts`.`user_id`) as `posts_ct` from `users` order by `posts_ct` desc limit 15 offset 0',
             $queries[1]['query']
@@ -216,7 +216,7 @@ class BuilderTest extends BaseTest
             User::query()->withCount('posts')->orderByDesc('id')->fastPaginate();
         });
 
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
         $this->assertEquals(
             'select `users`.`id` from `users` order by `id` desc limit 15 offset 0',
             $queries[1]['query']
@@ -232,7 +232,7 @@ class BuilderTest extends BaseTest
             NotificationStringKey::query()->fastPaginate();
         });
 
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
         $this->assertEquals(
             'select * from `notifications` where `notifications`.`id` in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) limit 16 offset 0',
             $queries[2]['query']
@@ -266,11 +266,11 @@ class BuilderTest extends BaseTest
         $this->assertInstanceOf(Paginator::class, $results);
         $this->assertEquals(15, $results->count());
         $this->assertEquals('Person 15', $results->last()->name);
-        $this->assertCount(2, $queries);
+        $this->assertCount(1, $queries);
 
         $this->assertEquals(
             'select * from `users` where `users`.`id` in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15) limit 16 offset 0',
-            $queries[1]['query']
+            $queries[0]['query']
         );
     }
 
@@ -283,12 +283,13 @@ class BuilderTest extends BaseTest
 
         $this->assertInstanceOf(Paginator::class, $results);
         $this->assertEquals(5, $results->count());
+        $this->assertEquals('Person 6', $results->first()->name);
         $this->assertEquals('Person 10', $results->last()->name);
-        $this->assertCount(2, $queries);
+        $this->assertCount(1, $queries);
 
         $this->assertEquals(
             'select * from `users` where `users`.`id` in (6, 7, 8, 9, 10) limit 6 offset 0',
-            $queries[1]['query']
+            $queries[0]['query']
         );
     }
 
@@ -302,7 +303,7 @@ class BuilderTest extends BaseTest
         $this->assertInstanceOf(Paginator::class, $results);
         $this->assertEquals(1, $results->count());
         $this->assertEquals('Post 1', $results->last()->name);
-        $this->assertCount(3, $queries);
+        $this->assertCount(2, $queries);
 
         $this->assertEquals(
             'select * from `posts` where `posts`.`user_id` = ? and `posts`.`user_id` is not null and `posts`.`id` in (1) limit 16 offset 0',
