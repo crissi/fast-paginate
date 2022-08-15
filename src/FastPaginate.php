@@ -64,13 +64,12 @@ class FastPaginate
             $innerQuery = $this->clone()
                 // Only select the primary key, we'll get the full
                 // records in a second query below.
-                ->setEagerLoads([])
                 ->select($innerSelectColumns)
                 ->forPage($page, $perPage)
                 // We don't need eager loads for this cloned query, they'll
                 // remain on the query that actually gets the records.
                 // (withoutEagerLoads not available on Laravel 8.)
-               // ->limit(5)
+                ->setEagerLoads([])
                 ->getQuery();
 
             $this->query->joinSub($innerQuery, 'fast_paginate_inner_query', "{$table}.{$key}", "fast_paginate_inner_query.{$key}");
